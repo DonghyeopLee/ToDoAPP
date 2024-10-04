@@ -9,9 +9,22 @@ todo_router = APIRouter(prefix="/api", tags=["Todo"])
 async def all_todos():
     try:
         data = await Todo.all()
-        return await GetTodo.from_queryset(data)
+        if not data:
+            return {"message": "No todos found"}  # Handle empty data case
+        return data
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+
+@todo_router.get("/{key}")
+async def getById_todos(key: int):
+    try: 
+        todo = await Todo.get(id=key)
+        return await GetTodo.from_tortoise_orm(todo)
+    except DoesNotExist:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Todo not found")
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal Server Error")
+
 
 @todo_router.post("/")
 async def post_todo(body: PostTodo):
